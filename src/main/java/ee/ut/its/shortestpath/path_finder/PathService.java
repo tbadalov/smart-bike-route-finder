@@ -71,7 +71,7 @@ public class PathService {
         return result;
     }
 
-    public double distance(Point p1, Dock dock) {
+    private double distance(Point p1, Dock dock) {
         double latitude = p1.getLat();
         double longitude = p1.getLng();
         double e = dock.getLatitude();
