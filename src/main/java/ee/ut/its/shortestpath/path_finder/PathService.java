@@ -50,7 +50,7 @@ public class PathService {
         for (Future<DirectionsRoute> routeFuture : routeCalls) {
             result.add(routeFuture.get());
         }
-
+        result.sort(Comparator.comparingDouble(DirectionsRoute::distance));
         return result;
     }
 
