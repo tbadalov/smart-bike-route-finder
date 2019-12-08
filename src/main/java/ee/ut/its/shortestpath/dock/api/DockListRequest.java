@@ -14,6 +14,11 @@ public class DockListRequest {
     }
 
     public static class DockResponse {
+
+        private DockResponse station;
+
+        private String popup;
+
         private String stationType;
 
         private String description;
@@ -58,6 +63,10 @@ public class DockListRequest {
 
         private String lowCycleStockingCount;
 
+        public DockResponse getStation() {
+            return station;
+        }
+
         public String getAddress() {
             return address;
         }
@@ -77,6 +86,36 @@ public class DockListRequest {
         public Integer getTotalLockedCycleCount() {
             return totalLockedCycleCount;
         }
+
+        public Integer getManualCount() {
+            final String KEYWORD = "<span class=\"station-bikes\"><b>";
+            String popup = getPopup();
+            int wordPosition = popup.indexOf(KEYWORD);
+            return getCountAfterKeyword(wordPosition, KEYWORD);
+        }
+
+        public Integer getElectricCount() {
+            final String KEYWORD = "<span class=\"station-bikes\"><b>";
+            String popup = getPopup();
+            int wordPosition = popup.indexOf(KEYWORD);
+            wordPosition = popup.indexOf(KEYWORD, wordPosition +KEYWORD.length());
+            return getCountAfterKeyword(wordPosition, KEYWORD);
+        }
+
+        public String getFreeDocksCount() {
+            return freeDocksCount;
+        }
+
+        private Integer getCountAfterKeyword(int start, String keyword) {
+            int endIndex = popup.indexOf("</b>", start + keyword.length());
+            String count = popup.substring(start + keyword.length(), endIndex);
+            return Integer.parseInt(count);
+        }
+
+        private String getPopup() {
+            return popup;
+        }
+
     }
 
     public static class AreaResponse {

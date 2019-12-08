@@ -24,6 +24,11 @@ public class DockService {
         return result;
     }
 
+    public Dock get(String id) throws IOException {
+        final DockListRequest.DockResponse response = dockApi.get(id);
+        return toDockForCount(response);
+    }
+
     private Dock toDock(DockListRequest.DockResponse response) {
         Dock dock = new Dock();
         dock.setName(response.getName());
@@ -32,6 +37,14 @@ public class DockService {
         dock.setLatitude(response.getAreaCentroid().getLatitude());
         dock.setId(response.getId());
         dock.setTotalLockedCycleCount(response.getTotalLockedCycleCount());
+        dock.setEmptySlots(Integer.parseInt(response.getFreeDocksCount()));
+        return dock;
+    }
+
+    private Dock toDockForCount(DockListRequest.DockResponse response) {
+        Dock dock = new Dock();
+        dock.setMechanicalBikes(response.getManualCount());
+        dock.setElectricBikes(response.getElectricCount());
         return dock;
     }
 }

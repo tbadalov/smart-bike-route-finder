@@ -10,6 +10,9 @@ public class Dock {
     private String name;
     private String address;
     private Integer totalLockedCycleCount;
+    private Integer electricBikes;
+    private Integer mechanicalBikes;
+    private Integer emptySlots;
 
     public String getName() {
         return name;
@@ -57,6 +60,30 @@ public class Dock {
 
     public void setTotalLockedCycleCount(Integer totalLockedCycleCount) {
         this.totalLockedCycleCount = totalLockedCycleCount;
+    }
+
+    public Integer getElectricBikes() {
+        return electricBikes;
+    }
+
+    public void setElectricBikes(Integer electricBikes) {
+        this.electricBikes = electricBikes;
+    }
+
+    public Integer getMechanicalBikes() {
+        return mechanicalBikes;
+    }
+
+    public void setMechanicalBikes(Integer mechanicalBikes) {
+        this.mechanicalBikes = mechanicalBikes;
+    }
+
+    public Integer getEmptySlots() {
+        return emptySlots;
+    }
+
+    public void setEmptySlots(Integer emptySlots) {
+        this.emptySlots = emptySlots;
     }
 
     @Override

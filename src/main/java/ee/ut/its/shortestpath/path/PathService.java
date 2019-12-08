@@ -1,12 +1,11 @@
 
 package ee.ut.its.shortestpath.path;
 
+import ee.ut.its.shortestpath.Route;
 import ee.ut.its.shortestpath.dock.Dock;
 import ee.ut.its.shortestpath.dock.DockService;
 import ee.ut.its.shortestpath.dock.api.DockApi;
-import ee.ut.its.shortestpath.Route;
 import okhttp3.OkHttpClient;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -27,6 +26,8 @@ public class PathService {
     @Value("${mapbox_key}")
     private String accessKey;
 
+    private final DockService dockService = new DockService(new DockApi(new OkHttpClient()));
+
     private ExecutorService executorService = Executors.newFixedThreadPool(6);
 
     public List<Route> bestRoutes(Point src, Point dest) throws IOException, ExecutionException, InterruptedException {
@@ -34,19 +35,35 @@ public class PathService {
         List<Dock> destDocks = closestDocks(dest);
         srcDocks.removeAll(destDocks);
 
-        List<Route> possibleRoutes = findPossibleRoutes(srcDocks, destDocks);
-        return possibleRoutes.stream()
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+        findBikeCount(srcDocks);
+        findBikeCount(destDocks);
+
+        return findPossibleRoutes(srcDocks, destDocks);
+    }
+
+    private void findBikeCount(List<Dock> docks) {
+        docks.parallelStream().forEach(dock -> {
+            int electricalCount = -1;
+            int mechanicalCount = -1;
+            try {
+                Dock response = dockService.get(dock.getId());
+                electricalCount = response.getElectricBikes();
+                mechanicalCount= response.getMechanicalBikes();
+            } catch (Exception e) {
+                System.out.println(e.toString());
+                e.printStackTrace();
+            } finally {
+                dock.setElectricBikes(electricalCount);
+                dock.setMechanicalBikes(mechanicalCount);
+            }
+        });
     }
 
     private List<Route> findPossibleRoutes(List<Dock> srcDocks, List<Dock> destDocks) throws ExecutionException, InterruptedException {
         List<Future<Route>> routeCalls = new ArrayList<>();
         for ( Dock srcDock : srcDocks ) {
             for ( Dock destDock : destDocks ) {
-                Future<Route> route = executorService.submit(
-                        new MapboxCallable(srcDock, destDock, accessKey)
-                );
+                Future<Route> route = executorService.submit(new MapboxCallable(srcDock, destDock, accessKey));
                 routeCalls.add(route);
             }
         }
@@ -55,11 +72,11 @@ public class PathService {
             result.add(routeFuture.get());
         }
 
-        return result;
+        return result.stream().filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     private List<Dock> closestDocks(Point point) throws IOException {
-        ArrayList<Dock> allDocks = new DockService(new DockApi(new OkHttpClient())).all();
+        ArrayList<Dock> allDocks = dockService.all();
         List<Pair> collect = allDocks.stream()
                 .map(dock -> new Pair(point, dock, distance(point, dock)))
                 .sorted(Comparator.comparingDouble(pair -> pair.distance))
