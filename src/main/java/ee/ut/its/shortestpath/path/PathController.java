@@ -1,6 +1,6 @@
-package ee.ut.its.shortestpath.path_finder;
+package ee.ut.its.shortestpath.path;
 
-import com.mapbox.api.directions.v5.models.DirectionsRoute;
+import ee.ut.its.shortestpath.Route;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -17,8 +17,9 @@ public class PathController {
     private PathService pathService;
 
     @PostMapping(value = "/findRoutes", consumes = "application/json", produces = "application/json")
-    public List<DirectionsRoute> findPath(@RequestBody PostRequest req) throws InterruptedException, ExecutionException, IOException {
-        List<DirectionsRoute> directionsRoutes = pathService.bestRoutes(req.getSrc(), req.getDest());
+    public List<Route> findPath(@RequestBody PostRequest req) throws InterruptedException, ExecutionException, IOException {
+        List<Route> directionsRoutes = pathService.bestRoutes(req.getSrc(), req.getDest());
+
         return directionsRoutes;
     }
 }

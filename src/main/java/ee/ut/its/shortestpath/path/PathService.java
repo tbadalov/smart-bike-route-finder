@@ -1,12 +1,12 @@
 
-package ee.ut.its.shortestpath.path_finder;
+package ee.ut.its.shortestpath.path;
 
-import com.mapbox.api.directions.v5.models.DirectionsRoute;
 import ee.ut.its.shortestpath.dock.Dock;
 import ee.ut.its.shortestpath.dock.DockService;
 import ee.ut.its.shortestpath.dock.api.DockApi;
-import ee.ut.its.shortestpath.route.RouteService;
+import ee.ut.its.shortestpath.Route;
 import okhttp3.OkHttpClient;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -28,29 +29,32 @@ public class PathService {
 
     private ExecutorService executorService = Executors.newFixedThreadPool(6);
 
-    public List<DirectionsRoute> bestRoutes(Point src, Point dest) throws IOException, ExecutionException, InterruptedException {
+    public List<Route> bestRoutes(Point src, Point dest) throws IOException, ExecutionException, InterruptedException {
         List<Dock> srcDocks = closestDocks(src);
         List<Dock> destDocks = closestDocks(dest);
-
         srcDocks.removeAll(destDocks);
-        List<Future<DirectionsRoute>> routeCalls = new ArrayList<>();
+
+        List<Route> possibleRoutes = findPossibleRoutes(srcDocks, destDocks);
+        return possibleRoutes.stream()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
+    private List<Route> findPossibleRoutes(List<Dock> srcDocks, List<Dock> destDocks) throws ExecutionException, InterruptedException {
+        List<Future<Route>> routeCalls = new ArrayList<>();
         for ( Dock srcDock : srcDocks ) {
             for ( Dock destDock : destDocks ) {
-                Future<DirectionsRoute> route = executorService.submit(
-                        new RouteService(
-                                com.mapbox.geojson.Point.fromLngLat(srcDock.getLongitude(), srcDock.getLatitude()),
-                                com.mapbox.geojson.Point.fromLngLat(destDock.getLongitude(), destDock.getLatitude()),
-                                accessKey
-                        )
+                Future<Route> route = executorService.submit(
+                        new MapboxCallable(srcDock, destDock, accessKey)
                 );
                 routeCalls.add(route);
             }
         }
-        List<DirectionsRoute> result = new ArrayList<>(routeCalls.size());
-        for (Future<DirectionsRoute> routeFuture : routeCalls) {
+        List<Route> result = new ArrayList<>(routeCalls.size());
+        for (Future<Route> routeFuture : routeCalls) {
             result.add(routeFuture.get());
         }
-        result.sort(Comparator.comparingDouble(DirectionsRoute::distance));
+
         return result;
     }
 

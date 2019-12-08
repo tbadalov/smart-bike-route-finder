@@ -1,4 +1,4 @@
-package ee.ut.its.shortestpath.path_finder;
+package ee.ut.its.shortestpath.path;
 
 public class Point {
 

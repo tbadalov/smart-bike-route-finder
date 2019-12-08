@@ -1,4 +1,4 @@
-package ee.ut.its.shortestpath.path_finder;
+package ee.ut.its.shortestpath.path;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
