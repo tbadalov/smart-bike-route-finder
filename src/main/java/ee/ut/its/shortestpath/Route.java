@@ -35,4 +35,12 @@ public class Route {
     public void setElectricOnly(Boolean electricOnly) {
         this.electricOnly = electricOnly;
     }
+
+    public void setSrc(Dock src) {
+        this.src = src;
+    }
+
+    public void setDest(Dock dest) {
+        this.dest = dest;
+    }
 }

@@ -13,6 +13,7 @@ public class Dock {
     private Integer electricBikes;
     private Integer mechanicalBikes;
     private Integer emptySlots;
+    private String altitude;
 
     public String getName() {
         return name;
@@ -84,6 +85,14 @@ public class Dock {
 
     public void setEmptySlots(Integer emptySlots) {
         this.emptySlots = emptySlots;
+    }
+
+    public String getAltitude() {
+        return altitude;
+    }
+
+    public void setAltitude(String altitude) {
+        this.altitude = altitude;
     }
 
     @Override

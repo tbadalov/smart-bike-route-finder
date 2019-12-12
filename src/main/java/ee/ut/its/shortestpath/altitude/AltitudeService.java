@@ -3,12 +3,20 @@ package ee.ut.its.shortestpath.altitude;
 import com.mapbox.geojson.LineString;
 import com.mapbox.geojson.Point;
 import ee.ut.its.shortestpath.Route;
+import ee.ut.its.shortestpath.altitude.api.AltitudeApi;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.util.List;
 
-@Service
 public class AltitudeService {
+
+    private final AltitudeApi altitudeApi;
+
+    public AltitudeService(AltitudeApi altitudeApi) {
+        this.altitudeApi = altitudeApi;
+    }
+
 
     private int METERS_DELTA = 50;
 

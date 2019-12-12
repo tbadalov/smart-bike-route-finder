@@ -1,11 +1,16 @@
 
 package ee.ut.its.shortestpath.path;
 
+import com.mapbox.geojson.Feature;
 import ee.ut.its.shortestpath.Route;
+import ee.ut.its.shortestpath.altitude.Altitude;
+import ee.ut.its.shortestpath.altitude.AltitudeService;
+import ee.ut.its.shortestpath.altitude.api.AltitudeApi;
 import ee.ut.its.shortestpath.dock.Dock;
 import ee.ut.its.shortestpath.dock.DockService;
 import ee.ut.its.shortestpath.dock.api.DockApi;
 import okhttp3.OkHttpClient;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -26,7 +31,9 @@ public class PathService {
     @Value("${mapbox_key}")
     private String accessKey;
 
+
     private final DockService dockService = new DockService(new DockApi(new OkHttpClient()));
+
 
     private ExecutorService executorService = Executors.newFixedThreadPool(6);
 
@@ -48,7 +55,7 @@ public class PathService {
             try {
                 Dock response = dockService.get(dock.getId());
                 electricalCount = response.getElectricBikes();
-                mechanicalCount= response.getMechanicalBikes();
+                mechanicalCount = response.getMechanicalBikes();
             } catch (Exception e) {
                 System.out.println(e.toString());
                 e.printStackTrace();
@@ -61,17 +68,41 @@ public class PathService {
 
     private List<Route> findPossibleRoutes(List<Dock> srcDocks, List<Dock> destDocks) throws ExecutionException, InterruptedException {
         List<Future<Route>> routeCalls = new ArrayList<>();
-        for ( Dock srcDock : srcDocks ) {
-            for ( Dock destDock : destDocks ) {
+        List<Future<Altitude>> altitudeCalls = new ArrayList<>();
+        for (Dock srcDock : srcDocks) {
+            for (Dock destDock : destDocks) {
                 Future<Route> route = executorService.submit(new MapboxCallable(srcDock, destDock, accessKey));
+                Future<Altitude> altitudes = executorService.submit(new MapboxAltitudeCallable(srcDock, accessKey));
+                altitudeCalls.add(altitudes);
+                altitudes = executorService.submit(new MapboxAltitudeCallable(destDock, accessKey));
+                altitudeCalls.add(altitudes);
                 routeCalls.add(route);
             }
         }
         List<Route> result = new ArrayList<>(routeCalls.size());
         for (Future<Route> routeFuture : routeCalls) {
-            result.add(routeFuture.get());
+            Route route = routeFuture.get();
+            int counter = 0;
+            for (Future<Altitude> altitude : altitudeCalls) {
+                if (route.getDest().getId().equals(altitude.get().getId())) {
+                    Dock d = route.getDest();
+                    d.setAltitude(altitude.get().getAltitude());
+                    route.setDest(d);
+                } else if (route.getSrc().getId().equals(altitude.get().getId())) {
+                    Dock d = route.getSrc();
+                    d.setAltitude(altitude.get().getAltitude());
+                    route.setSrc(d);
+                }
+                counter++;
+                if (counter == altitudeCalls.size()) {
+                    System.out.println(route.getDest().getId() + "  " + route.getSrc().getId());
+                }
+
+            }
+            result.add(route);
         }
 
+        System.out.println(altitudeCalls.toString());
         return result.stream().filter(Objects::nonNull).collect(Collectors.toList());
     }
 
